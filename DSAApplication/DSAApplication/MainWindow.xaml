@@ -5,26 +5,37 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DSAApplication"
         xmlns:Converters="clr-namespace:DSAApplication.Converters"
-        Title="Encryption Methods" Height="315" Width="800"
+        Title="Encryption Methods" Height="350" Width="900"
         ResizeMode="NoResize">
     <Window.Resources>
         <Converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" TrueValue="Visible" FalseValue="Hidden"/>
     </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="20*"/>
+            <RowDefinition Height="50*"/>
+            <RowDefinition Height="70*"/>
             <RowDefinition Height="200"/>
-            <RowDefinition Height="69*"/>
+            <RowDefinition Height="150*"/>
         </Grid.RowDefinitions>
         <Menu Grid.Row="0" DockPanel.Dock="Top" Margin="0,0,0,1">
             <MenuItem Header="File">
                 <MenuItem Header="Choose file..." Command="{Binding ChooseFileCommand}"/>
                 <Separator />
-                <MenuItem Header="Import RSA keys..." Command="{Binding ImportSignatureCommand}"/>
-                <MenuItem Header="Export RSA keys..." Command="{Binding ExportSignatureCommand}"/>
+                <MenuItem Header="Import signature..." Command="{Binding ImportSignatureCommand}"/>
+                <MenuItem Header="Export signature..." Command="{Binding ExportSignatureCommand}"/>
             </MenuItem>
         </Menu>
-        <Grid Grid.Row="1" >
+        <ToolBarTray Grid.Row="1" DockPanel.Dock="Top" Margin="0,0,0,1">
+            <ToolBar>
+                <Button Command="{Binding SignFileCommand}">
+                    <TextBlock Margin="3,0,0,0">Sign file...</TextBlock>
+                </Button>
+                <Button Command="{Binding VefiryFileCommand}">
+                    <TextBlock Margin="3,0,0,0">Verify file...</TextBlock>
+                </Button>
+            </ToolBar>
+        </ToolBarTray>
+        <Grid Grid.Row="2" >
             <Grid.RowDefinitions>
                 <RowDefinition Height="10"/>
                 <RowDefinition Height="25"/>
@@ -38,14 +49,15 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="100" />
             </Grid.ColumnDefinitions>
-            <Label Content="Enter RC5 password for operation:" Grid.Column="1" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Top"/>
+            <Label Content="Enter text to sign:" Grid.Column="1" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Top"/>
             <TextBox Text="{Binding TextInput, Mode=OneWayToSource, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Stretch" Grid.Column="1" Grid.Row="2" TextWrapping="Wrap" VerticalAlignment="Top"/>
-            <Button Command="{Binding SignCommand}" Content="Sign" Grid.Column="1" HorizontalAlignment="Stretch" Grid.Row="3" VerticalAlignment="Top"/>
-            <Button Command="{Binding VefiryCommand}" Content="Verify" Grid.Column="1" HorizontalAlignment="Stretch" Grid.Row="4" VerticalAlignment="Top"/>
-            <Button Command="{Binding SignFileCommand}" Content="Sign File" Grid.Column="1" HorizontalAlignment="Stretch" Grid.Row="3" VerticalAlignment="Top"/>
-            <Button Command="{Binding VefiryFileCommand}" Content="Verify File" Grid.Column="1" HorizontalAlignment="Stretch" Grid.Row="4" VerticalAlignment="Top"/>
+            <Button Command="{Binding SignTextCommand}" Content="Sign..." Grid.Column="1" HorizontalAlignment="Stretch" Grid.Row="3" VerticalAlignment="Top"/>
+            <StackPanel Grid.Column="1" HorizontalAlignment="Stretch" Grid.Row="4">
+                <Label Content="Signature:" Grid.Column="1" Grid.Row="1" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                <Label Content="{Binding Signature, Mode=OneWayToSource, UpdateSourceTrigger=PropertyChanged}" Grid.Column="1" Grid.Row="1" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+            </StackPanel>
         </Grid>
-        <StatusBar Grid.Row="2">
+        <StatusBar Grid.Row="3">
             <StatusBar.ItemsPanel>
                 <ItemsPanelTemplate>
                     <Grid>
