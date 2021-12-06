@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DSAApplication"
         xmlns:Converters="clr-namespace:DSAApplication.Converters"
-        Title="DSA" Height="350" Width="900"
+        Title="{Binding FilenameInput}" Height="350" Width="900"
         ResizeMode="NoResize">
     <Window.Resources>
         <Converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" TrueValue="Visible" FalseValue="Hidden"/>
@@ -42,6 +42,7 @@
                 <RowDefinition Height="25"/>
                 <RowDefinition Height="25"/>
                 <RowDefinition Height="25"/>
+                <RowDefinition Height="25"/>
                 <RowDefinition Height="10"/>
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
@@ -50,9 +51,10 @@
                 <ColumnDefinition Width="100" />
             </Grid.ColumnDefinitions>
             <Label Content="Enter text to sign:" Grid.Column="1" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Top"/>
-            <TextBox Text="{Binding TextInput}" HorizontalAlignment="Stretch" Grid.Column="1" Grid.Row="2" TextWrapping="Wrap" VerticalAlignment="Top"/>
+            <TextBox Text="{Binding TextInput, Mode=OneWayToSource, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Stretch" Grid.Column="1" Grid.Row="2" TextWrapping="Wrap" VerticalAlignment="Top"/>
             <Button Command="{Binding SignTextCommand}" Content="Sign..." Grid.Column="1" HorizontalAlignment="Stretch" Grid.Row="3" VerticalAlignment="Top"/>
-            <StackPanel Orientation="Horizontal" Grid.Column="1" HorizontalAlignment="Stretch" Grid.Row="4">
+            <Button Command="{Binding VerifyTextCommand}" Content="Verify" Grid.Column="1" HorizontalAlignment="Stretch" Grid.Row="4" VerticalAlignment="Top"/>
+            <StackPanel Orientation="Horizontal" Grid.Column="1" HorizontalAlignment="Stretch" Grid.Row="5" VerticalAlignment="Top">
                 <Label Content="Signature:"/>
                 <Label Content="{Binding Signature}"/>
             </StackPanel>
