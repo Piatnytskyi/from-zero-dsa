@@ -12,24 +12,19 @@ namespace DSAApplication.ViewModel
 {
     class DSAApplicationViewModel : AbstractViewModel
     {
-        private readonly RSACryptoServiceProvider _rsaCryptoServiceProvider;
+        private string _textInput = string.Empty;
 
-        //TODO: Use some kind of settings.
-        private const int _rsaEncryptionBlockSize = 64;
-
-        private string _rc5PasswordInput = string.Empty;
-
-        public string RC5PasswordInput
+        public string TextInput
         {
-            get => _rc5PasswordInput;
+            get => _textInput;
             set
             {
-                if (_rc5PasswordInput.Equals(value))
+                if (_textInput.Equals(value))
                 {
                     return;
                 }
-                _rc5PasswordInput = value;
-                RaisePropertyChanged(nameof(RC5PasswordInput));
+                _textInput = value;
+                RaisePropertyChanged(nameof(TextInput));
             }
         }
 
@@ -98,28 +93,34 @@ namespace DSAApplication.ViewModel
             }
         }
 
+        private string _signature = string.Empty;
+
+        public string Signature
+        {
+            get => _signature;
+            set
+            {
+                if (_signature.Equals(value))
+                {
+                    return;
+                }
+                _signature = value;
+                RaisePropertyChanged(nameof(Signature));
+            }
+        }
+
         public RelayCommand ChooseFileCommand { get; set; }
-        public RelayCommand ImportRSAKeysCommand { get; set; }
-        public RelayCommand ExportRSAKeysCommand { get; set; }
-        public AsyncCommand RSAEncryptFileCommand { get; set; }
-        public AsyncCommand RSADencryptFileCommand { get; set; }
-        public AsyncCommand RC5EncryptFileCommand { get; set; }
-        public AsyncCommand RC5DencryptFileCommand { get; set; }
+        public RelayCommand ImportSignatureCommand { get; set; }
+        public RelayCommand ExportSignatureCommand { get; set; }
+        public RelayCommand SignTextCommand { get; set; }
+        public AsyncCommand SignFileCommand { get; set; }
+        public AsyncCommand VefiryFileCommand { get; set; }
 
         public DSAApplicationViewModel()
         {
-            //TODO: Create decorators for state change.
-            //TODO: Make encrypt/decrypt and RSA keys related commands accept filenames.
-            //TODO: Make proper exception handling.
             ChooseFileCommand = new RelayCommand(o => ChooseFile(), c => CanChooseFile());
-            ImportRSAKeysCommand = new RelayCommand(o => ImportRSAKeys(), c => CanImportRSAKeys());
-            ExportRSAKeysCommand = new RelayCommand(o => ExportRSAKeys(), c => CanExportRSAKeys());
-            RSAEncryptFileCommand = new AsyncCommand(o => RSAEncryptFile(), c => CanRSAEncryptFile());
-            RSADencryptFileCommand = new AsyncCommand(o => RSADecryptFile(), c => CanRSADecryptFile());
-            RC5EncryptFileCommand = new AsyncCommand(o => RC5EncryptFile(), c => CanRC5EncryptFile());
-            RC5DencryptFileCommand = new AsyncCommand(o => RC5DecryptFile(), c => CanRC5DecryptFile());
-
-            _rsaCryptoServiceProvider = new RSACryptoServiceProvider();
+            ImportSignatureCommand = new RelayCommand(o => ImportSignature(), c => CanImportSignature());
+            ExportSignatureCommand = new RelayCommand(o => ExportSignature(), c => CanExportSignature());
         }
 
         private bool CanChooseFile()
@@ -142,12 +143,12 @@ namespace DSAApplication.ViewModel
             }
         }
 
-        private bool CanImportRSAKeys()
+        private bool CanImportSignature()
         {
             return !IsInProgress;
         }
 
-        private void ImportRSAKeys()
+        private void ImportSignature()
         {
             var openFileDialog = new OpenFileDialog();
             openFileDialog.Title = "Choose File...";
@@ -157,9 +158,13 @@ namespace DSAApplication.ViewModel
             {
                 try
                 {
-                    _rsaCryptoServiceProvider.FromXmlString(File.ReadAllText(openFileDialog.FileName));
+                    byte[] signature = new byte[20];
+                    using (BinaryReader reader = new BinaryReader(new FileStream(openFileDialog.FileName, FileMode.Open)))
+                        reader.Read(signature, 0, 20);
 
-                    Status = "RSA Keys Imported:";
+                    Signature = Encoding.ASCII.GetString(signature);
+
+                    Status = "Signature imported:";
                     Output = openFileDialog.FileName;
                 }
                 catch (Exception ex)
@@ -169,76 +174,28 @@ namespace DSAApplication.ViewModel
             }
         }
 
-        private bool CanExportRSAKeys()
+        private bool CanExportSignature()
         {
-            return !IsInProgress;
+            return !(IsInProgress
+                || string.IsNullOrEmpty(Signature));
         }
 
-        private void ExportRSAKeys()
+        private void ExportSignature()
         {
             var saveFileDialog = new SaveFileDialog();
             saveFileDialog.Title = "Save File...";
-            saveFileDialog.FileName = "RSAKeys.xml";
-            saveFileDialog.Filter = "XML files (*.xml)|*.xml";
+            saveFileDialog.FileName = "Signature.bin";
+            saveFileDialog.Filter = "BIN files (*.bin)|*.bin";
 
             if (saveFileDialog.ShowDialog() == true)
             {
-                File.WriteAllText(
+                File.WriteAllBytes(
                     saveFileDialog.FileName,
-                    _rsaCryptoServiceProvider.ToXmlString(includePrivateParameters: true));
+                    Encoding.ASCII.GetBytes(Signature));
 
-                Status = "RSA Keys Exported:";
+                Status = "Signature exported:";
                 Output = saveFileDialog.FileName;
             }
-        }
-
-        private bool CanRSAEncryptFile()
-        {
-            return !(IsInProgress
-                || !File.Exists(FilenameInput)
-                || string.IsNullOrEmpty(FilenameInput));
-        }
-
-        private async Task RSAEncryptFile()
-        {
-            
-        }
-
-        private bool CanRSADecryptFile()
-        {
-            return !(IsInProgress
-                || !File.Exists(FilenameInput)
-                || string.IsNullOrEmpty(FilenameInput));
-        }
-
-        private async Task RSADecryptFile()
-        {
-            
-        }
-
-        private bool CanRC5DecryptFile()
-        {
-            return !(IsInProgress
-                || !File.Exists(FilenameInput)
-                || string.IsNullOrEmpty(FilenameInput));
-        }
-
-        private async Task RC5DecryptFile()
-        {
-            
-        }
-
-        private bool CanRC5EncryptFile()
-        {
-            return !(IsInProgress
-                || !File.Exists(FilenameInput)
-                || string.IsNullOrEmpty(FilenameInput)
-                || string.IsNullOrEmpty(RC5PasswordInput));
-        }
-
-        private async Task RC5EncryptFile()
-        {
-            
         }
     }
 }
