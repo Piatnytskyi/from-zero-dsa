@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DSAApplication"
         xmlns:Converters="clr-namespace:DSAApplication.Converters"
-        Title="Encryption Methods" Height="350" Width="900"
+        Title="DSA" Height="350" Width="900"
         ResizeMode="NoResize">
     <Window.Resources>
         <Converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" TrueValue="Visible" FalseValue="Hidden"/>
@@ -50,11 +50,11 @@
                 <ColumnDefinition Width="100" />
             </Grid.ColumnDefinitions>
             <Label Content="Enter text to sign:" Grid.Column="1" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Top"/>
-            <TextBox Text="{Binding TextInput, Mode=OneWayToSource, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Stretch" Grid.Column="1" Grid.Row="2" TextWrapping="Wrap" VerticalAlignment="Top"/>
+            <TextBox Text="{Binding TextInput}" HorizontalAlignment="Stretch" Grid.Column="1" Grid.Row="2" TextWrapping="Wrap" VerticalAlignment="Top"/>
             <Button Command="{Binding SignTextCommand}" Content="Sign..." Grid.Column="1" HorizontalAlignment="Stretch" Grid.Row="3" VerticalAlignment="Top"/>
-            <StackPanel Grid.Column="1" HorizontalAlignment="Stretch" Grid.Row="4">
-                <Label Content="Signature:" Grid.Column="1" Grid.Row="1" HorizontalAlignment="Left" VerticalAlignment="Top"/>
-                <Label Content="{Binding Signature, Mode=OneWayToSource, UpdateSourceTrigger=PropertyChanged}" Grid.Column="1" Grid.Row="1" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+            <StackPanel Orientation="Horizontal" Grid.Column="1" HorizontalAlignment="Stretch" Grid.Row="4">
+                <Label Content="Signature:"/>
+                <Label Content="{Binding Signature}"/>
             </StackPanel>
         </Grid>
         <StatusBar Grid.Row="3">
