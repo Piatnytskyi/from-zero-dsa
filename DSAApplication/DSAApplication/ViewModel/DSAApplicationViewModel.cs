@@ -12,6 +12,10 @@ namespace DSAApplication.ViewModel
 {
     class DSAApplicationViewModel : AbstractViewModel
     {
+        private readonly DSACryptoServiceProvider _dsaCryptoServiceProvider;
+        private readonly SHA1 _sha1;
+        private byte[] _currentSignature = new byte[40];
+
         private string _textInput = string.Empty;
 
         public string TextInput
@@ -113,6 +117,7 @@ namespace DSAApplication.ViewModel
         public RelayCommand ImportSignatureCommand { get; set; }
         public RelayCommand ExportSignatureCommand { get; set; }
         public RelayCommand SignTextCommand { get; set; }
+        public RelayCommand VerifyTextCommand { get; set; }
         public AsyncCommand SignFileCommand { get; set; }
         public AsyncCommand VefiryFileCommand { get; set; }
 
@@ -121,6 +126,181 @@ namespace DSAApplication.ViewModel
             ChooseFileCommand = new RelayCommand(o => ChooseFile(), c => CanChooseFile());
             ImportSignatureCommand = new RelayCommand(o => ImportSignature(), c => CanImportSignature());
             ExportSignatureCommand = new RelayCommand(o => ExportSignature(), c => CanExportSignature());
+            SignTextCommand = new RelayCommand(o => SignText(), c => CanSignText());
+            VerifyTextCommand = new RelayCommand(o => VerifyText(), c => CanVerifyText());
+            SignFileCommand = new AsyncCommand(o => SignFile(), c => CanSignFile());
+            VefiryFileCommand = new AsyncCommand(o => VefiryFile(), c => CanVefiryFile());
+
+            DSACryptoServiceProvider.UseMachineKeyStore = true;
+            _dsaCryptoServiceProvider = new DSACryptoServiceProvider();
+            _sha1 = SHA1.Create();
+        }
+
+        private bool CanVerifyText()
+        {
+            return !(IsInProgress
+                || string.IsNullOrEmpty(TextInput)
+                || string.IsNullOrEmpty(Signature));
+        }
+
+        private void VerifyText()
+        {
+            IsInProgress = true;
+            Status = "Verifing...:";
+
+            try
+            {
+                Output = _dsaCryptoServiceProvider.VerifySignature(
+                        _sha1.ComputeHash(Encoding.ASCII.GetBytes(TextInput)),
+                        _currentSignature)
+                    ? "Verified."
+                    : "Not verified.";
+
+                Status = "Verification result:";
+                IsInProgress = false;
+            }
+            catch (Exception ex)
+            {
+                Status = "Verification failed!";
+                IsInProgress = false;
+                MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private bool CanVefiryFile()
+        {
+            return !(IsInProgress
+                || string.IsNullOrEmpty(FilenameInput)
+                || string.IsNullOrEmpty(Signature));
+        }
+
+        private async Task VefiryFile()
+        {
+            await Task.Run(() =>
+            {
+                IsInProgress = true;
+                Status = "Verifing...:";
+
+                try
+                {
+                    using (var fileToVerify = File.OpenRead(FilenameInput))
+                        Output = _dsaCryptoServiceProvider.VerifySignature(_sha1.ComputeHash(fileToVerify), _currentSignature)
+                            ? "Verified."
+                            : "Not verified.";
+
+                    Status = "Verification result:";
+                    IsInProgress = false;
+                }
+                catch (Exception ex)
+                {
+                    Status = "Verification failed!";
+                    IsInProgress = false;
+                    MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            });
+        }
+
+        private bool CanSignFile()
+        {
+            return !(IsInProgress
+                 || string.IsNullOrEmpty(FilenameInput));
+        }
+
+        private async Task SignFile()
+        {
+            await Task.Run(() =>
+            {
+                var saveFileDialog = new SaveFileDialog();
+                saveFileDialog.Title = "Save File...";
+                saveFileDialog.FileName = Path.GetFileName(FilenameInput + ".bin");
+                saveFileDialog.Filter = "BIN files (*.bin)|*.bin";
+
+                if (saveFileDialog.ShowDialog() == false)
+                    return;
+
+                IsInProgress = true;
+                Status = "Signing...:";
+
+                var temporaryFileName = FilenameInput == saveFileDialog.FileName
+                    ? saveFileDialog.FileName + ".signature"
+                    : saveFileDialog.FileName;
+
+                try
+                {
+                    using (var fileToSign = File.OpenRead(FilenameInput))
+                    using (var signatureFile = File.OpenWrite(temporaryFileName))
+                    {
+                        _currentSignature = _dsaCryptoServiceProvider.CreateSignature(
+                            _sha1.ComputeHash(fileToSign));
+                        signatureFile.Write(_currentSignature, 0, _currentSignature.Length);
+                        Signature = Convert.ToBase64String(_currentSignature);
+                    }
+
+                    Status = "File was signied!";
+                    IsInProgress = false;
+                }
+                catch (Exception ex)
+                {
+                    Status = "Signing failed!";
+                    IsInProgress = false;
+                    MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                finally
+                {
+                    if (temporaryFileName != saveFileDialog.FileName)
+                        File.Move(temporaryFileName, saveFileDialog.FileName, true);
+                }
+            });
+        }
+
+        private bool CanSignText()
+        {
+            return !(IsInProgress
+                || string.IsNullOrEmpty(TextInput));
+        }
+
+        private void SignText()
+        {
+            var saveFileDialog = new SaveFileDialog();
+            saveFileDialog.Title = "Save File...";
+            saveFileDialog.FileName = Path.GetFileName("signature.bin");
+            saveFileDialog.Filter = "BIN files (*.bin)|*.bin";
+
+            if (saveFileDialog.ShowDialog() == false)
+                return;
+
+            IsInProgress = true;
+            Status = "Signing...:";
+
+            var temporaryFileName = FilenameInput == saveFileDialog.FileName
+                    ? saveFileDialog.FileName + ".signature"
+                    : saveFileDialog.FileName;
+
+            try
+            {
+                using (var signatureFile = File.OpenWrite(temporaryFileName))
+                {
+                    _currentSignature = _dsaCryptoServiceProvider.CreateSignature(
+                        _sha1.ComputeHash(Encoding.ASCII.GetBytes(TextInput)));
+                    signatureFile.Write(_currentSignature, 0, _currentSignature.Length);
+                    Signature = Convert.ToBase64String(_currentSignature);
+                    Output = Signature;
+                }
+
+                Status = "Text was signied!";
+                IsInProgress = false;
+            }
+            catch (Exception ex)
+            {
+                Status = "Signing failed!";
+                IsInProgress = false;
+                MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                if (temporaryFileName != saveFileDialog.FileName)
+                    File.Move(temporaryFileName, saveFileDialog.FileName, true);
+            }
         }
 
         private bool CanChooseFile()
@@ -158,11 +338,10 @@ namespace DSAApplication.ViewModel
             {
                 try
                 {
-                    byte[] signature = new byte[20];
                     using (BinaryReader reader = new BinaryReader(new FileStream(openFileDialog.FileName, FileMode.Open)))
-                        reader.Read(signature, 0, 20);
+                        reader.Read(_currentSignature, 0, 40);
 
-                    Signature = Encoding.ASCII.GetString(signature);
+                    Signature = Convert.ToBase64String(_currentSignature);
 
                     Status = "Signature imported:";
                     Output = openFileDialog.FileName;
@@ -189,9 +368,7 @@ namespace DSAApplication.ViewModel
 
             if (saveFileDialog.ShowDialog() == true)
             {
-                File.WriteAllBytes(
-                    saveFileDialog.FileName,
-                    Encoding.ASCII.GetBytes(Signature));
+                File.WriteAllBytes(saveFileDialog.FileName, _currentSignature);
 
                 Status = "Signature exported:";
                 Output = saveFileDialog.FileName;
